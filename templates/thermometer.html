@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<meta name="description" content="">
+		<meta name="author" content="">
+		
+		<!-- Manifest and Cache Control manifest="cache.appcache" -->
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+		
+		<!-- Microsoft Edge Compatable -->
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        
+        <!--Apple Web-App-->	  
+        <meta name="apple-mobile-web-app-capable" content="yes"> 
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="translucent">
+        
+        <!--Mobile friendly-->	  
+        <meta name="HandheldFriendly" content="True">
+        <meta name="MobileOptimized" content="320">
+        
+		<script type="text/javascript" src="/static/js/socket.io.min.js"></script>
+		<script type="text/javascript" src="/static/js/jquery-3.3.1.min.js"></script>
+		<link rel="stylesheet" href="/static/js/bootstrap.min.css">
+		<link rel="stylesheet" href="/static/main.css">
+		
+        <title>ThermoServer</title>
+    </head>
+    <body>
+        {% if message %}<h3>{{ message|safe }}</h3>{% endif %}
+        <header>
+            <div>
+                <p id="connectionState">Connection State to Server: </p>
+            </div>
+        </header>
+        <nav>
+            <!-- main navigation in here -->
+            <div class="sidenav" id="sidenav">
+                <div tabindex="0" id="nav_closeButton">&times;</div>
+                <div tabindex="0"><a href="#home" tabindex="0">Home</a></div>
+                <div tabindex="0"><button id="sidebar_dataDropdown_btn">Data ›</button></div>
+                <div id="sidebar_dataDropdown" class="sub-menue">
+                    <div tabindex="0"><a href="#temp-data">Temperature Data</a></div>
+                    <div tabindex="0"><a href="#data-notes">Notes</a></div>
+                    <div tabindex="0"><a href="#web-settings">Web Settings</a></div>
+                </div>
+                <div tabindex="0"><button id="sidebar_raspiDropdown_btn">Rapberry Pi ›</button></div>
+                <div id="sidebar_raspiDropdown" class="sub-menue">
+                    <div tabindex="0"><a href="#raspi-notes">Notes</a></div>
+                    <div tabindex="0"><a href="#web-cli">Web CLI</a></div>
+                    <div tabindex="0"><a href="#raspi-settings">Settings</a></div>
+                    <div tabindex="0"><a href="#about">About</a></div>
+                </div>
+            </div>
+        </nav>
+        <main class="main" id="mainView">
+            <div class="page" id="homePage">
+                <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
+                
+                <br><div id="messages"></div>
+            </div>
+            <div class="page" id="temp-dataPage">
+                <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
+            </div>
+            <div class="page" id="data-notesPage">
+                <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
+            </div>
+            <div class="page" id="web-settingsPage">
+                <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
+                
+                <div id="toggles">
+                    <br>
+                    <div tabindex="0">
+                        <input type="checkbox" name="testMode" id="testModeToggle" class="ios-toggle" checked>
+                        <label for="testModeToggle" class="checkbox-label" data-off="Testing Mode off" data-on="Testing Mode on"></label>
+                    </div>
+                    <br>
+                    <div tabindex="0">
+                        <input type="checkbox" name="developerModeToggle" id="developerModeToggle" class="ios-toggle">
+                        <label for="developerModeToggle" class="checkbox-label" data-off="Competition Mode off" data-on="Competition Mode on"></label>
+                    </div>
+                    <br>
+                    <div tabindex="0">
+                        <input type="checkbox" name="defaultToggle" id="defaultToggle" class="ios-toggle">
+                        <label for="defaultToggle" class="checkbox-label" data-off="Show Off Mode off" data-on="Show Off Mode on"></label>
+                    </div>
+                    <br>
+                </div>
+            </div>
+            <div class="page" id="raspi-notesPage">
+                <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
+                <h1>Rapberry Pi Internal Notes</h1>
+            </div>
+            <div class="page" id="web-cliPage">
+                <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
+            </div>
+            <div class="page" id="raspi-settingsPage">
+                <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
+                <h1>Raspberry Pi Settings</h1>
+            </div>
+            <div class="page" id="aboutPage">
+                <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
+                <h1>About</h1>
+            </div>
+        </main>
+        <footer id="mainFooter">
+            <small><strong>© </strong>Copyright 2019 Google Codebase‹› Managed by Ridley Nelson</small>
+        </footer>
+        
+        <script>
+            // this runs on startup
+            function itit() {
+                var elements = document.getElementsByClassName("page"), i;
+                for (var i = 0; i < elements.length; i++) {elements[i].style.display = 'none';}
+                document.getElementById("homePage").style.display = "block";
+            }
+            
+            // We use this if we want to prevent touch, mouse, or keyboard events
+            function blockMove(event) {
+                event.preventDefault(); // Tell the browser not to move the window.
+            }
+            
+            // This hides all of the pages, then shows a page that was passed as a parameter
+            function hidePagesExceptFor(page) {
+                var elements = document.getElementsByClassName("page"), i;
+                for (var i = 0; i < elements.length; i++) {
+                    elements[i].style.display = 'none';
+                }
+                document.getElementById(page).style.display = "block";
+            }
+            
+            // accessability feature
+            window.addEventListener("keydown", function(e) {
+                // activates selected item
+                if (e.keyCode === 13 || e.keyCode === 32) { // The Enter/Return key
+                    // if (document.activeElement.children.length !== 0) {
+                    //     console.log("[MinuteBots [SYSTEM LOG]]: # of children elements: " + document.activeElement.children.length);
+                    //     for (var i = 0; i < document.activeElement.children.length; i++) console.log("[MinuteBots [SYSTEM LOG]]: # of children elements: " + document.activeElement.children[i].tagName);
+                    //     document.activeElement.children[0].click();
+                    // } else {
+                    //     document.activeElement.focus();
+                    //     document.activeElement.click();
+                    // }
+                    // alert(document.activeElement);
+                    document.activeElement.children[0].click();
+                }
+                
+                // prevents Scrolling using arrow keys and spacebar
+                if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) blockMove(e);
+            });
+            
+            // Determine what was clicked
+            window.addEventListener('click', function(e) {
+                tagName = document.activeElement.tagName;
+                console.log(document.activeElement.parentNode.tagName);
+                if (tagName === "A" && document.activeElement.parentNode.tagName === "DIV") document.activeElement.click();
+                
+                if (e.target.id === 'sidebar_raspiDropdown_btn') {
+                    var dropdownContent = document.getElementById("sidebar_raspiDropdown");
+                    document.getElementById("sidebar_raspiDropdown_btn").classList.toggle("active");
+                    if (dropdownContent.style.display === "block") dropdownContent.style.display = "none";
+                    else dropdownContent.style.display = "block";
+                }
+                if (e.target.id === 'sidebar_dataDropdown_btn') {
+                    var dropdownContent = document.getElementById("sidebar_dataDropdown");
+                    document.getElementById("sidebar_dataDropdown_btn").classList.toggle("active");
+                    if (dropdownContent.style.display === "block") dropdownContent.style.display = "none";
+                    else dropdownContent.style.display = "block";
+                }
+                
+                // the proof check button
+                if (e.target.id === 'proofCheckResults') alert(gameData.results());
+                
+                // For FRC
+                // if (window.location.hash === "#tutorial/dictionary" && document.activeElement.tagName === "A") {
+                //     hidePagesExceptFor("tutorialPage");
+                //     document.getElementById("tutorialPage_dictionary").scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"});
+                //     document.getElementById("tutorialPage_dictionary").children[0].focus();
+                // }
+                
+                // navigation open and close buttons
+                if (e.target.id === "nav_closeButton") {
+                    document.getElementById("sidenav").style.width = "0";
+                    document.getElementById("mainView").style.marginLeft = "0";
+                    document.getElementById("mainFooter").style.marginLeft = "20px";
+                    document.body.style.backgroundColor = "white";
+                }
+                if (e.target.id === "nav_openButton") {
+                    document.getElementById("sidenav").style.width = "200px";
+                    document.getElementById("mainView").style.marginLeft = "200px";
+                    document.getElementById("mainFooter").style.marginLeft = "220px";
+                    document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
+                }
+            });
+            
+            // Determines what page to go to
+            window.addEventListener('hashchange', function(e) {
+                tagName = document.activeElement.tagName;
+                // console.log(tagName);
+                
+                if (window.location.hash === "#home") hidePagesExceptFor("homePage");
+                if (window.location.hash === "#") hidePagesExceptFor("homePage");
+                if (window.location.hash === "#about") hidePagesExceptFor("aboutPage");
+                if (window.location.hash === "#web-settings") hidePagesExceptFor("web-settingsPage");
+                if (window.location.hash === "#raspi-settings") hidePagesExceptFor("raspi-settingsPage");
+                if (window.location.hash === "#web-cli") hidePagesExceptFor("web-cliPage");
+                if (window.location.hash === "#raspi-notes") hidePagesExceptFor("raspi-notesPage");
+                if (window.location.hash === "#data-notes") hidePagesExceptFor("data-notesPage");
+                if (window.location.hash === "#temp-data") hidePagesExceptFor("temp-dataPage");
+            });
+            
+            // Start up functions
+            window.addEventListener('load', function() {
+                window.scrollTo(0,1);
+                itit();
+                hidePagesExceptFor("homePage");
+                
+                //connect to the socket server.
+                const socket = io.connect('https://' + document.domain + ':' + location.port);
+                
+                socket.on('connection success', function(msg) {
+                    addMessage(msg.connectionState, "connectionState");
+                    addMessage(msg.data, "");
+                });
+            });
+            
+            function addMessage(message, id="messages") {
+                var text = document.createTextNode(message),
+                    el = document.createElement('li'),
+                    messages = document.getElementById(id);
+                    
+                
+                el.appendChild(text);
+                if (message==="Connected" && document.getElementById(id).children.length>=1) {
+                    el.style = "list-style: none; color: lime;"
+                    document.getElementById(id).removeChild(document.getElementById(id).childNodes[1]);
+                } else {
+                    el.style = "list-style: none;"
+                }
+                messages.appendChild(el);
+            }
+        </script>
+    </body>
