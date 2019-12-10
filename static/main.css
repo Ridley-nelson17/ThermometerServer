@@ -362,7 +362,7 @@ input[type="text"], input[type="number"], select {
     background: white;
 }
 
-#mainView > button {
+.main > button {
     -webkit-appearance: none;
     -moz-appearance: none;
     -o-appearance: none;
@@ -374,7 +374,7 @@ input[type="text"], input[type="number"], select {
     border-radius: 5px;
     border: 2px double white;
 }
-#mainView > button:active, button:hover {
+.main > button:active, button:hover {
     background-color: black;
     color: white;
     border: 2px double #ed132c;

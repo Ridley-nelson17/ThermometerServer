@@ -21,12 +21,11 @@
         <meta name="HandheldFriendly" content="True">
         <meta name="MobileOptimized" content="320">
         
-		<script type="text/javascript" src="/static/js/socket.io.min.js"></script>
-		<script type="text/javascript" src="/static/js/jquery-3.3.1.min.js"></script>
-		<link rel="stylesheet" href="/static/js/bootstrap.min.css">
-		<link rel="stylesheet" href="/static/main.css">
-		
         <title>ThermoServer</title>
+        
+		
+		<link rel="stylesheet" href="/static/bootstrap-min.css">
+		<link rel="stylesheet" href="/static/main.css">
     </head>
     <body>
         {% if message %}<h3>{{ message|safe }}</h3>{% endif %}
@@ -58,11 +57,17 @@
         <main class="main" id="mainView">
             <div class="page" id="homePage">
                 <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
+                <div id="console"></div>
                 
                 <br><div id="messages"></div>
             </div>
             <div class="page" id="temp-dataPage">
                 <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
+                
+                <span>
+                    <button onclick="javascript:void(0)" id="getThermoDataCSV">Get Thermo Data (as CSV)</button>
+                    <button onclick="javascript:void(0)" id="getThermoDataList">Get Thermo Data (as list)</button>
+                </span>
             </div>
             <div class="page" id="data-notesPage">
                 <div onclick="javascript:void(0)" id="nav_openButton">&#9776; open</div>
@@ -109,7 +114,15 @@
             <small><strong>© </strong>Copyright 2019 Google Codebase‹› Managed by Ridley Nelson</small>
         </footer>
         
-        <script>
+        <script type="text/javascript" src="/static/js/socket-io-min.js" charset="utf-8"></script>
+		<script type="text/javascript" src="/static/js/jquery-3-3-1.min.js" charset="utf-8"></script>
+		
+        <script type='text/javascript'>
+            (function (logger) {console.old = console.log;console.log = function () {var output = "", arg, i;for (i = 0; i < arguments.length; i++) {arg = arguments[i];output += "<span class=\"log-" + (typeof arg) + "\">";if (typeof arg === "object" && typeof JSON === "object" && typeof JSON.stringify === "function") {output += JSON.stringify(arg);} else {output += arg;} output += "</span>&nbsp;";}logger.innerHTML += output + "<br>";console.old.apply(undefined, arguments);};})(document.getElementById("console"));
+            console.log("==========TESTING==========");
+            console.log(navigator.platform, navigator.userAgent, navigator.onLine, navigator.language, new Date());
+            console.log("==========TESTING==========");
+            
             // this runs on startup
             function itit() {
                 var elements = document.getElementsByClassName("page"), i;
@@ -193,6 +206,9 @@
                     document.getElementById("mainFooter").style.marginLeft = "220px";
                     document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
                 }
+                
+                if (e.target.id === 'getThermoDataCSV') window.open("/get-thermo-csv");
+                if (e.target.id === 'getThermoDataList') window.open("/get-thermo-csv_as-list");
             });
             
             // Determines what page to go to
@@ -211,35 +227,95 @@
                 if (window.location.hash === "#temp-data") hidePagesExceptFor("temp-dataPage");
             });
             
+            function addMessage(message, id="messages") {
+                var text = document.createTextNode(message),
+                    el = document.createElement('li'),
+                    messages = document.getElementById(id);
+                
+                el.appendChild(text);
+                if (id==='connectionState' && document.getElementById(id).children.length>=1) {
+                    el.style = "list-style: none; color: lime;";
+                    document.getElementById(id).removeChild(document.getElementById(id).childNodes[1]);
+                } else {
+                    el.style = "list-style: none;";
+                }
+                messages.appendChild(el);
+                console.log(message);
+            }
+            
             // Start up functions
             window.addEventListener('load', function() {
                 window.scrollTo(0,1);
                 itit();
                 hidePagesExceptFor("homePage");
-                
-                //connect to the socket server.
-                const socket = io.connect('https://' + document.domain + ':' + location.port);
-                
-                socket.on('connection success', function(msg) {
-                    addMessage(msg.connectionState, "connectionState");
-                    addMessage(msg.data, "");
-                });
             });
             
-            function addMessage(message, id="messages") {
-                var text = document.createTextNode(message),
-                    el = document.createElement('li'),
-                    messages = document.getElementById(id);
-                    
-                
-                el.appendChild(text);
-                if (message==="Connected" && document.getElementById(id).children.length>=1) {
-                    el.style = "list-style: none; color: lime;"
-                    document.getElementById(id).removeChild(document.getElementById(id).childNodes[1]);
-                } else {
-                    el.style = "list-style: none;"
-                }
-                messages.appendChild(el);
-            }
+            const socket = io.connect('https://' + document.domain + ':' + location.port); //connect to the socket server.
+            
+            socket.on('connect', function() {
+                addMessage('Connected', "connectionState");
+            });
+            
+            socket.on('disconnect', function() {
+                addMessage('Disconnected', "connectionState");
+            });
+            
+            socket.emit("getLiveData");
+            
+            socket.on('incomingData', function(message) {
+                addMessage(message.data, "messages");
+            });
         </script>
     </body>
+</html>
+<!--// Used for geo tagging devices (personal hobby) NOT IN USE-->
+<!--function checkinGeoTag() {-->
+<!--    const deviceAnalystics = {-->
+<!--        "deviceName": 1,-->
+<!--        "onlineStatus": navigator.onLine,-->
+<!--        "userAgent": navigator.userAgent,-->
+<!--        "cookieStatus": navigator.cookieEnabled,-->
+<!--        "platform": navigator.platform,-->
+<!--        "device": navigator.product,-->
+<!--        "language": navigator.language,-->
+<!--        "app": navigator.platform,-->
+<!--        "currentOS": navigator.oscpu-->
+<!--    };-->
+    
+<!--    if (navigator.geolocation) {-->
+<!--        console.log('Geolocation is supported!');-->
+<!--        function calculateDistance(lat1, lon1, lat2, lon2) {-->
+<!--          var R = 6371; // km-->
+<!--          var dLat = (lat2 - lat1).toRad();-->
+<!--          var dLon = (lon2 - lon1).toRad(); -->
+<!--          var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +-->
+<!--                  Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * -->
+<!--                  Math.sin(dLon / 2) * Math.sin(dLon / 2); -->
+<!--          var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); -->
+<!--          var d = R * c;-->
+<!--          return d;-->
+<!--        }-->
+<!--        Number.prototype.toRad = function() {-->
+<!--          return this * Math.PI / 180;-->
+<!--        };-->
+        
+<!--        // Initiate the geolocation function-->
+<!--        window.onload = function() {-->
+<!--          var startPos;-->
+<!--          navigator.geolocation.getCurrentPosition(function(position) {-->
+<!--            startPos = position;-->
+<!--            document.getElementById('startLat').innerHTML = startPos.coords.latitude;-->
+<!--            document.getElementById('startLon').innerHTML = startPos.coords.longitude;-->
+<!--          }, function(error) {-->
+<!--            alert('[Error]: Error code: ' + error.code);-->
+<!--            // error.code can be: 0: unknown error, 1: permission denied, 2: position unavailable, 3: timed out-->
+<!--          });-->
+          
+<!--          navigator.geolocation.watchPosition(function(position) {-->
+<!--              document.getElementById('currentLat').innerHTML = position.coords.latitude;-->
+<!--              document.getElementById('currentLon').innerHTML = position.coords.longitude;-->
+<!--              document.getElementById('distance').innerHTML = calculateDistance(startPos.coords.latitude, startPos.coords.longitude, position.coords.latitude, position.coords.longitude);-->
+<!--          });-->
+<!--        };-->
+<!--    } else { console.log('Geolocation is not supported on this device.'); }-->
+<!--}-->
